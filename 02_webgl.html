@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>webGl</title>
+</head>
+<body onload="Init()">
+<canvas id="canvas" style="border: 1px solid red" width='500' height='500'></canvas>
+<script id="shader-vs" type="notjs">
+  precision lowp float;
+  attribute vec3 v3Position;
+  attribute vec4 inColor;
+  varying   vec4 outColor;
+  void main(){
+    outColor = inColor;
+    gl_Position = vec4(v3Position, 1.0);
+  }
+</script>
+<script id="shader-fs" type="notjs">
+  precision lowp float;
+  varying vec4 outColor;
+  void main(){
+    gl_FragColor = outColor;
+  }
+</script>
+<script>
+  let webgl = null, 
+  vertexShaderObject = null, 
+  fragmentShaderObject = null, 
+  programObject = null, 
+  triangleBuffer = null, 
+  indexBuffer = null, 
+  v3PositionIndex = 0,
+  inColor = 1
+  function Init() {
+    let canvas = document.querySelector('#canvas')
+    webgl = canvas.getContext('webgl')
+    // 设定webgl视窗大小
+    webgl.viewport(0, 0, canvas.clientWidth, canvas.clientHeight)
+
+    // 创建shader
+    vertexShaderObject = webgl.createShader(webgl.VERTEX_SHADER)
+    fragmentShaderObject = webgl.createShader(webgl.FRAGMENT_SHADER)
+
+    initShaderSouce(webgl, vertexShaderObject, 'shader-vs')
+    initShaderSouce(webgl, fragmentShaderObject, 'shader-fs')
+
+    programObject = webgl.createProgram()
+
+    webgl.attachShader(programObject, vertexShaderObject)
+    webgl.attachShader(programObject, fragmentShaderObject)
+
+    webgl.bindAttribLocation(programObject, inColor, 'inColor')
+    webgl.bindAttribLocation(programObject, v3PositionIndex, 'v3Position')
+
+    webgl.linkProgram(programObject)
+    if(!webgl.getProgramParameter(programObject, webgl.LINK_STATUS)) {
+      console.log(webgl.getProgramInfoLog(programObject))
+      return
+    }
+    webgl.useProgram(programObject)
+
+    let triangleArrayData = [
+      -0.5, 0.5, 0.0, 1.0, 0.0, 0.0, 1.0, // 上顶点
+      0.5, 0.5, 0.0, 0.0, 1.0, 0.0, 1.0, // 左顶点
+      0.5, -0.5, 0.0, 0.0, 0.0, 1.0, 1.0, // 右顶点
+      -0.5, -0.5, 0.0, 1.0, 1.0, 0.0, 1.0 // 测试数据
+    ]
+    let indexArrayData = [
+      0, 1, 2,
+      0, 2, 3
+    ]
+
+    triangleBuffer = webgl.createBuffer()
+    indexBuffer = webgl.createBuffer()
+
+    webgl.bindBuffer(webgl.ARRAY_BUFFER, triangleBuffer)
+    webgl.bufferData(webgl.ARRAY_BUFFER, new Float32Array(triangleArrayData), webgl.STATIC_DRAW)
+
+    webgl.bindBuffer(webgl.ELEMENT_ARRAY_BUFFER, indexBuffer)
+    webgl.bufferData(webgl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indexArrayData), webgl.STATIC_DRAW)
+    webgl.clearColor(0.0, 0.0, 0.0, 1.0)
+    webgl.clear(webgl.COLOR_BUFFER_BIT)
+
+    webgl.bindBuffer(webgl.ARRAY_BUFFER, triangleBuffer)
+    webgl.bindBuffer(webgl.ELEMENT_ARRAY_BUFFER, indexBuffer)
+
+    webgl.enableVertexAttribArray(v3PositionIndex)
+    webgl.enableVertexAttribArray(inColor)
+
+    webgl.vertexAttribPointer(v3PositionIndex, 3, webgl.FLOAT, false, 7 * 4, 0)
+    webgl.vertexAttribPointer(inColor, 4, webgl.FLOAT, false, 7 * 4, 12)
+    
+    webgl.drawElements(webgl.TRIANGLES, 6, webgl.UNSIGNED_SHORT, 0)
+    // webgl.drawArrays(webgl.TRIANGLES, 0, 3)
+    // 
+
+  }
+
+  function initShaderSouce(webgl, shader, id){
+    let shaderScript = document.querySelector(`#${ id }`).text
+    webgl.shaderSource(shader, shaderScript)
+    webgl.compileShader(shader)
+    const success = webgl.getShaderParameter(shader, webgl.COMPILE_STATUS)
+    if(success) {
+      return shader
+    }
+    console.log(webgl.getShaderInfoLog(shader))
+    webgl.deleteShader(shader)
+  }
+</script>
+</body>
+</html>
