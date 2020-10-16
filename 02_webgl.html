@@ -7,7 +7,8 @@
 </head>
 <body onload="Init()">
 <canvas id="canvas" style="border: 1px solid red" width='500' height='500'></canvas>
-<script id="shader-vs" type="notjs">
+<script>
+  let shaderVsJs = `
   precision lowp float;
   attribute vec3 v3Position;
   attribute vec4 inColor;
@@ -16,15 +17,14 @@
     outColor = inColor;
     gl_Position = vec4(v3Position, 1.0);
   }
-</script>
-<script id="shader-fs" type="notjs">
+  `
+  let shaderFsJs = `
   precision lowp float;
   varying vec4 outColor;
   void main(){
     gl_FragColor = outColor;
   }
-</script>
-<script>
+  `
   let webgl = null, 
   vertexShaderObject = null, 
   fragmentShaderObject = null, 
@@ -43,8 +43,8 @@
     vertexShaderObject = webgl.createShader(webgl.VERTEX_SHADER)
     fragmentShaderObject = webgl.createShader(webgl.FRAGMENT_SHADER)
 
-    initShaderSouce(webgl, vertexShaderObject, 'shader-vs')
-    initShaderSouce(webgl, fragmentShaderObject, 'shader-fs')
+    initShaderSouce(webgl, vertexShaderObject, shaderVsJs)
+    initShaderSouce(webgl, fragmentShaderObject, shaderFsJs)
 
     programObject = webgl.createProgram()
 
@@ -98,8 +98,8 @@
 
   }
 
-  function initShaderSouce(webgl, shader, id){
-    let shaderScript = document.querySelector(`#${ id }`).text
+  function initShaderSouce(webgl, shader, shaderScript){
+    // let shaderScript = document.querySelector(`#${ id }`).text
     webgl.shaderSource(shader, shaderScript)
     webgl.compileShader(shader)
     const success = webgl.getShaderParameter(shader, webgl.COMPILE_STATUS)
